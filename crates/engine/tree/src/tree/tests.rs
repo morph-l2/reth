@@ -183,7 +183,7 @@ fn test_skip_policy_bypasses_state_root_computation() {
             .generate_random_block(parent.number + 1, parent.hash)
             .into_block();
         if candidate.body.transactions.is_empty() {
-            break candidate
+            break candidate;
         }
     };
     // force a mismatch with computed state root to ensure strict mode would reject this block
@@ -1035,8 +1035,8 @@ async fn test_get_canonical_blocks_to_persist() {
     assert!(!blocks_to_persist.iter().any(|b| b.recovered_block().hash() == fork_block_hash));
 
     // check that the original block 4 is still included
-    assert!(blocks_to_persist.iter().any(|b| b.recovered_block().number == 4 &&
-        b.recovered_block().hash() == blocks[4].recovered_block().hash()));
+    assert!(blocks_to_persist.iter().any(|b| b.recovered_block().number == 4
+        && b.recovered_block().hash() == blocks[4].recovered_block().hash()));
 
     // check that if we advance persistence, the persistence action is the correct value
     test_harness.tree.advance_persistence().expect("advancing persistence should succeed");
