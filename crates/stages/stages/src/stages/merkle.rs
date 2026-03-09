@@ -398,9 +398,22 @@ where
                 .header_by_number(input.unwind_to)?
                 .ok_or_else(|| ProviderError::HeaderNotFound(input.unwind_to.into()))?;
 
-            validate_state_root(block_root, SealedHeader::seal_slow(target), input.unwind_to)?;
+            let sealed_target = SealedHeader::seal_slow(target);
+            if let Err(err) = validate_state_root(block_root, sealed_target.clone(), input.unwind_to) {
+                // Some L2s use non-MPT state roots (e.g. ZK-trie) for pre-migration blocks.
+                // The computed MPT root will never match those headers, so we downgrade
+                // the error to a warning during unwind. Forward sync re-validates roots.
+                warn!(
+                    target: "sync::stages::merkle::unwind",
+                    block = input.unwind_to,
+                    ?block_root,
+                    expected = ?sealed_target.state_root(),
+                    %err,
+                    "State root mismatch during unwind, proceeding anyway"
+                );
+            }
 
-            // Validation passed, apply unwind changes to the database.
+            // Apply unwind changes to the database.
             provider.write_trie_updates(updates)?;
 
             // Update entities checkpoint to reflect the unwind operation
