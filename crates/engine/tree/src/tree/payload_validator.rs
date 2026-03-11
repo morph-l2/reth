@@ -237,6 +237,7 @@ where
     N: NodePrimitives,
     P: DatabaseProviderFactory<
             Provider: BlockReader
+                          + TrieReader
                           + StageCheckpointReader
                           + PruneCheckpointReader
                           + ChangeSetReader
@@ -549,10 +550,6 @@ where
                 block = ?block.num_hash(),
                 "Skipping state root computation by validator policy"
             );
-
-            if let Some(valid_block_tx) = valid_block_tx {
-                let _ = valid_block_tx.send(());
-            }
 
             let execution_outcome =
                 Arc::new(ExecutionOutcome::from((output, block_num_hash.number)));
@@ -1096,8 +1093,8 @@ where
         if let Some(tip_block) = blocks.first() {
             let data = tip_block.trie_data();
             if let (Some(anchor_hash), Some(trie_input)) =
-                (data.anchor_hash(), data.trie_input().cloned()) &&
-                anchor_hash == block_hash
+                (data.anchor_hash(), data.trie_input().cloned())
+                && anchor_hash == block_hash
             {
                 trace!(target: "engine::tree::payload_validator", %block_hash,"Reusing trie input with matching anchor hash");
                 self.metrics
